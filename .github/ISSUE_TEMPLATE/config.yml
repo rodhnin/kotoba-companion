@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/rodhnin/kotoba-companion/security/advisories/new
+    about: Report it privately here, never in a public issue.
+  - name: Conduct concern
+    url: https://github.com/rodhnin/kotoba-companion/blob/main/CODE_OF_CONDUCT.md
+    about: How to report one without naming anybody in public.
+  - name: Documentation
+    url: https://kotoba.rodhnin.com/docs
+    about: Setup, the terminal, the avatar, and everything the repository keeps short.
+  - name: Report something privately
+    url: https://kotoba.rodhnin.com/report
+    about: The form, if you would rather not use GitHub at all.

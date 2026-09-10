@@ -1,0 +1,28 @@
+# Windows is a supported platform, so line endings are decided here rather than by whoever clones.
+# Everything in the repository is stored and checked out with LF; a CRLF checkout would break the
+# shell scripts and make every file look modified to the next contributor.
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.sh    text eol=lf
+*.mjs   text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+
+# Never touched, never diffed as text.
+*.png   binary
+*.webp  binary
+*.jpg   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.moc3  binary
+
+# Her face art is data, not source: it should not decide what language this project is written in.
+assets/cli/faces/*.png          linguist-generated
+api/src/kotoba/data/cli/faces/* linguist-generated
+docs/assets/**                  linguist-documentation
+public/live2dcubismcore.min.js  linguist-vendored

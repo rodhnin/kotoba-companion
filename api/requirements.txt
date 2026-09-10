@@ -1,0 +1,41 @@
+# CONVENIENCE MIRROR — NOT the source of truth.
+#
+# `pyproject.toml` is authoritative for every version floor in this project. This file exists only for
+# tooling that wants a flat list, and it carries the backend set: the core dependencies plus the
+# `server`, `voice`, `mcp` and `web` extras (no `cli`, no `dev`). The supported install is still
+#
+#     pip install -e ".[dev]"        # from api/
+#
+# because a package installed from this file alone is not importable as `kotoba` at all.
+#
+# It cannot drift: `tests/test_requirements_mirror_pyproject.py` fails if any line here disagrees with
+# `pyproject.toml`. Change a floor THERE and copy it down; never edit one only here.
+
+# --- core (pyproject [project].dependencies) ---
+aiosqlite>=0.20
+cryptography>=42        # AES-256-GCM at-rest encryption of saved API keys/tokens (core/keystore.py).
+                        # Declared explicitly rather than left transitive via mcp→pyjwt[crypto], so the
+                        # keystore cannot break if that chain changes.
+httpx>=0.27
+openai>=2,<3            # Responses API (responses.create) + the built-in web_search tool. On v2,
+                        # function_call_output.output may be a content-part list (we send image parts).
+python-dotenv>=1.0
+PyYAML>=6.0             # ~/.kotoba/mcp.yaml server config
+
+# --- server extra ---
+fastapi>=0.115
+pydantic>=2.9
+uvicorn[standard]>=0.32
+
+# --- voice extra ---
+websockets>=16,<18      # ElevenLabs outbound voice layer (core/voice/): realtime STT + streaming TTS.
+
+# --- mcp extra ---
+mcp>=1.27,<2            # The CEILING is the point: mcp 2.0 renamed Tool.inputSchema, which turns the
+                        # anti-injection schema scan into a silent no-op and breaks every MCP tool
+                        # conversion — on the day the user connects their first server, not at install.
+
+# --- web extra ---
+readability-lxml>=0.8.1
+lxml>=5.0               # readability-lxml's backend; the floor picks a release with prebuilt wheels
+                        # instead of compiling libxml2 on the user's machine.

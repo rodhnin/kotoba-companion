@@ -1,0 +1,28 @@
+[
+  {
+    "type": "audio_start",
+    "turn": 1
+  },
+  {
+    "type": "interrupted",
+    "turn": 1
+  },
+  {
+    "type": "audio_start",
+    "turn": 1,
+    "hold": true
+  },
+  {
+    "type": "audio_end",
+    "turn": 1
+  },
+  {
+    "type": "audio_start",
+    "turn": 1,
+    "hold": true
+  },
+  {
+    "type": "audio_end",
+    "turn": 1
+  }
+]

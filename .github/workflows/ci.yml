@@ -1,0 +1,118 @@
+# Three jobs, and the third is the one that matters: it builds a wheel and installs it on a machine
+# with no Node, which is the only way to find out whether `pip install` gives anybody a working app.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: python ${{ matrix.python }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    # Without this a leg inherits the six-hour default, and the one test that WEDGES on Windows rather
+    # than failing would hold a runner all afternoon before anybody learned anything.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 is the declared floor, 3.13 is what many people still have, and 3.14 is what a fresh
+        # install gives you today. Windows is here because a single unguarded POSIX import used to
+        # stop every command on it.
+        #
+        # One Windows version, not three, and it is the newest: the floor is already enforced on
+        # Ubuntu, and the defects Windows contributes are about the platform rather than the
+        # interpreter — a console that cannot encode her own name, an ACL that names a group by a
+        # word. Those show up on whatever version is installed, so the leg tracks what people run.
+        os: [ubuntu-latest]
+        python: ["3.11", "3.13", "3.14"]
+        include:
+          - os: windows-latest
+            python: "3.14"
+    # The Linux image ships Chrome AND forbids unprivileged user namespaces, so a headless render
+    # finds no usable sandbox, exits, and hands back nothing at all — which is a failing assertion,
+    # not a skip. The variable is the product's own answer for a host of that shape.
+    env:
+      KOTOBA_CHROMIUM_NO_SANDBOX: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e "./api[dev]"
+      - run: pytest api/tests -q
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit --noUnusedLocals --noUnusedParameters
+      - run: npm test
+
+  package:
+    name: the wheel, installed with no node
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+      - run: npm ci
+      - run: pip install --upgrade pip build
+      - run: python scripts/build_web.py
+      - run: pip install -e "./api[dev]"
+      # Here the skip becomes a failure: "nobody built it" is exactly what this job exists to catch.
+      - run: KOTOBA_REQUIRE_WEB=1 pytest api/tests/test_the_wheel_carries_the_web_ui.py -q
+      - run: python -m build --outdir dist ./api
+      # A fresh interpreter with node off the PATH: if she needs it, this is where it shows. The
+      # image ships its own node beside /usr/bin, so deleting the one the setup step installed left
+      # another behind — the PATH is rebuilt without any directory that holds one. Whole directories
+      # go, python included, which is why the interpreter is invoked by its absolute path.
+      - name: import the installed wheel with node off the PATH
+        run: |
+          python -m venv /tmp/fresh
+          /tmp/fresh/bin/pip install --quiet "$(ls dist/*.whl)[server,cli]"
+          command -v node || { echo "node was never here; this job would prove nothing"; exit 1; }
+          CLEAN=""
+          IFS=: read -ra DIRS <<< "$PATH"
+          for d in "${DIRS[@]}"; do
+            if [ -x "$d/node" ] || [ -x "$d/npm" ] || [ -x "$d/npx" ]; then continue; fi
+            CLEAN="$CLEAN${CLEAN:+:}$d"
+          done
+          PATH="$CLEAN" /tmp/fresh/bin/python - <<'PY'
+          import shutil
+          assert shutil.which("node") is None, "node is still on the PATH; this proves nothing"
+          from kotoba.core import frontend
+          seen = frontend.describe()
+          assert seen["kind"] == "packaged", f"a wheel with no web UI: {seen}"
+          print("packaged web UI:", seen["files"], "files, kotoba", seen["version"])
+          PY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/*

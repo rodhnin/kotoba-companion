@@ -1,0 +1,17 @@
+name: Feature request
+description: Something she should be able to do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you are trying to do
+      description: The problem, not the solution — it often has a shorter answer than the one imagined.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you had in mind
+    validations:
+      required: true

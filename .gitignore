@@ -1,0 +1,99 @@
+# ─── Secrets / env ───────────────────────────────────────────────────────────
+.env
+.env.*
+*.env
+!.env.example
+!.env.local.example
+*.pem
+*.key
+id_rsa*
+keystore.json
+# The live per-user state dir (settings, keystore master key, files, visual memory). Never product.
+.kotoba/
+
+# ─── Python (backend) ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# ─── SQLite database ─────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+kotoba.db
+
+# ─── Node / Next.js (frontend) ───────────────────────────────────────────────
+node_modules/
+.next/
+.next-export/
+# Written by scripts/build_web.py; the wheel carries it, the repository does not.
+api/src/kotoba/web/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Editors / OS ────────────────────────────────────────────────────────────
+.DS_Store
+*.log
+.idea/
+.vscode/
+.vercel
+
+# ─── Browser MCP runtime output ──────────────────────────────────────────────
+# Snapshots and screenshots of whatever page she was on, which can be a logged-in one. Redirected out
+# of the repo now; the old in-repo location is ignored too.
+.playwright-mcp/
+*snapshot*.yml
+*-snapshot.md
+snapshot.yml
+# Stray browser-snapshot/scrape artifacts that can land in the source tree from a work session (they may
+# contain real page content from a logged-in account — must never reach the public repo).
+*snapshot*.md
+*cookies*.json
+*session*.json
+screenshots/
+reports/
+_private-archive/
+
+# ─── Browser-automation scrape debris (api/ top level) ───────────────────────
+# Ad-hoc DOM-dump scripts and their output can capture real page content from a logged-in session.
+# The backend is Python — any loose .js at the api/ top level is debris, never source.
+/api/*.js
+
+# Working material, not product: ~100 MB of source art and the mockup that decided how the CLI looks.
+assets/cli/_source/
+design/cli-prototype/
+
+# Live2D models are third-party art and CANNOT be redistributed. Whoever installs Kotoba
+# downloads a model onto their own machine; the repository ships an expression map instead,
+# so any model can be dropped in. A model committed here would publish someone else's work
+# under this repository's licence.
+public/models/
+
+# Copies the manifest needs beside itself; the build writes them from the root originals.
+api/LICENSE
+api/THIRD_PARTY_NOTICES.md
+
+# Tool caches and coverage output — none of it exists until somebody runs the tools.
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+
+# What an editor or an operating system leaves behind.
+Thumbs.db
+*.swp
+*.swo
+*~
+*.orig
+*.rej
+

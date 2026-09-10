@@ -1,0 +1,274 @@
+:root {
+  /* idol-pop palette — warm paper base, plum ink, poppy accents (no purple-on-white cliché) */
+  --cream: #fbf1e3;
+  --cream-2: #f4e6d2;
+  --ink: #211a2e;
+  --coral: #ff5a3c;
+  --grape: #6c4ce0;
+  --mint: #14c79a;
+  --sun: #ffb22e;
+  --live: #ff3b5c;
+
+  /* The same two accents with the lights down, for small marks ON cream: --coral and --sun are made to
+     be a fill or to sit on ink, and at 12-13px on paper they measure under 3:1. --coral-deep is --coral
+     scaled to 0.72 — the channel ratios are untouched, so it is the same hue at a lower level; --sun-deep
+     is the amber the "first meeting" badge was already written in. */
+  --coral-deep: #b8412b;
+  --sun-deep: #8a5a00;
+
+  /* No font files ship with the product: the two typefaces named here for months are licensed for
+     embedding but not for redistribution, and nothing ever loaded them anyway. The display/body
+     split is carried by weight and letter-spacing, which every surface already sets. */
+  --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* hard sticker shadow */
+  --shadow-pop: 6px 6px 0 var(--ink);
+  --shadow-pop-sm: 3px 3px 0 var(--ink);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The companion route covers the viewport; the landing scrolls normally. */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Idol-styled scrollbar — thin, rounded, plum-on-cream.
+   Setting `scrollbar-color` DISABLES the ::-webkit-scrollbar rules below in Chromium, so those are a
+   fallback for engines that do not take the standard properties, never the thing you are looking at.
+   The colour carries it: a bar is always painted at the scrollport's edge, which is the card's ink
+   border, so an ink thumb read as one dark smudge climbing the rounded corner. Plum does not. */
+.kotoba-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grape) transparent;
+}
+.kotoba-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+.kotoba-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+
+.kotoba-scroll::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 5px solid var(--cream);
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.kotoba-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--coral);
+}
+
+/* floating idol confetti shapes */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-18px) rotate(calc(var(--r, 0deg) + 8deg));
+  }
+}
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+@keyframes mote {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-120px) translateX(14px);
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Runs a FINITE number of times (see the onboarding ready card) — its resting frame must equal the
+   card's static box-shadow exactly, so the moment the animation ends is invisible. */
+@keyframes readyGlow {
+  0%, 100% { box-shadow: var(--shadow-pop), 0 0 0 6px rgba(255,178,46,0.30), 0 20px 60px rgba(255,178,46,0.35); }
+  50%      { box-shadow: var(--shadow-pop), 0 0 0 11px rgba(255,178,46,0.45), 0 26px 74px rgba(255,178,46,0.55); }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-3px, 1px) rotate(-0.4deg);
+  }
+  75% {
+    transform: translate(3px, -1px) rotate(0.4deg);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Markdown reader (Files viewer, .md preview) — idol aesthetic: warm cream paper
+   with a faint dotted texture, display-weight headers with sticker accents, chunky
+   ink rules. Styled here (not inline) so every element react-markdown emits is covered.
+   ─────────────────────────────────────────────────────────────────────────── */
+.md-view {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(33, 26, 46, 0.05) 1px, transparent 0) 0 0 / 22px 22px,
+    linear-gradient(180deg, var(--cream) 0%, var(--cream-2) 100%);
+}
+.md-view > :first-child { margin-top: 0; }
+.md-view > :last-child { margin-bottom: 0; }
+.md-view h1,
+.md-view h2,
+.md-view h3,
+.md-view h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.18;
+  color: var(--ink);
+}
+.md-view h1 {
+  font-size: 1.85rem;
+  margin: 0 0 0.5rem;
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  background: var(--sun);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop-sm);
+}
+.md-view h2 {
+  font-size: 1.3rem;
+  margin: 1.7rem 0 0.6rem;
+  color: var(--grape);
+  padding-bottom: 0.25rem;
+  border-bottom: 3px solid var(--ink);
+}
+.md-view h3 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 0.4rem;
+  color: var(--coral);
+}
+.md-view p { margin: 0 0 0.85rem; }
+.md-view a {
+  color: var(--grape);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+.md-view a:hover { color: var(--coral); }
+.md-view strong { font-weight: 700; color: var(--ink); }
+.md-view ul,
+.md-view ol { margin: 0 0 0.9rem; padding-left: 1.3rem; }
+.md-view li { margin: 0.25rem 0; }
+.md-view ul li::marker { color: var(--coral); }
+.md-view ol li::marker { color: var(--grape); font-weight: 700; }
+.md-view blockquote {
+  margin: 0 0 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-left: 5px solid var(--coral);
+  background: rgba(255, 178, 46, 0.16);
+  border-radius: 0 10px 10px 0;
+}
+.md-view code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--cream-2);
+  border: 1.5px solid var(--ink);
+  border-radius: 5px;
+  padding: 0.05rem 0.32rem;
+}
+.md-view pre {
+  background: var(--ink);
+  color: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  box-shadow: var(--shadow-pop-sm);
+  margin: 0 0 0.9rem;
+}
+.md-view pre code { background: transparent; border: none; padding: 0; color: inherit; font-size: 0.82rem; }
+.md-view hr { border: none; border-top: 3px dashed var(--ink); opacity: 0.35; margin: 1.4rem 0; }
+.md-view table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 0.9rem;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.md-view th,
+.md-view td { border: 1.5px solid var(--ink); padding: 0.4rem 0.6rem; text-align: left; }
+.md-view th { background: var(--grape); color: #fff; font-family: var(--font-display); }
+.md-view tr:nth-child(even) td { background: rgba(244, 230, 210, 0.55); }
+.md-view img { max-width: 100%; border: 3px solid var(--ink); border-radius: 12px; box-shadow: var(--shadow-pop-sm); }
+
+/* Keyboard focus, everywhere, once. Six files hide their own ring with an inline `outline: none`, and
+   an inline style beats a stylesheet — hence `!important`. `:focus-visible` means a mouse click still
+   shows nothing, so no signed-off screen changes appearance. Components that draw their own ring (the
+   onboarding cans, the coin slot) already use :focus-visible and simply agree with this. */
+:focus-visible {
+  outline: 3px solid var(--grape) !important;
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* The label-wrapped file picker (the transcript composer's attach button) focuses a 1x1 input clipped
+   to nothing, so the ring above is painted where no one can see it. The label is the 38x38 box a
+   person actually looks at, so it wears the ring — still :focus-visible, so a mouse click is silent. */
+label:has(> input:focus-visible) {
+  outline: 3px solid var(--grape);
+  outline-offset: 2px;
+  border-radius: inherit;
+}

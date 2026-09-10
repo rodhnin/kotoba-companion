@@ -1,0 +1,72 @@
+# Security updates are the reason this exists. Grouped and monthly, because a solo maintainer
+# drowning in pull requests reviews none of them — except security ones, which arrive on their own.
+# Every ecosystem waits a week before proposing a brand-new release: a compromised package is usually
+# pulled within days, and nothing here is urgent enough to be worth being the one who finds out.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /api
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    # Both ceilings are deliberate and neither is a version anyone here has run. mcp 2.0 renamed
+    # Tool.inputSchema, which turns the anti-injection schema scan into a silent no-op — widening that
+    # range is a security regression wearing an upgrade's clothes. Named as version ranges rather than
+    # as semver-major: a manifest that declares a RANGE gets a requirement update, and it arrived anyway.
+    ignore:
+      - dependency-name: "mcp"
+        versions: [">=2"]
+      - dependency-name: "openai"
+        versions: [">=3"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      frontend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    # The Live2D renderer declares a peer dependency of ^6 on every PixiJS package it touches, so a
+    # major there is not an upgrade — it is her face going dark. The Node types follow .nvmrc, which
+    # CI and the web image both read; they move when Node moves, not on their own.
+    ignore:
+      - dependency-name: "pixi.js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@pixi/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 is the compiler rewritten in Go, not the next number after 5.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The Dockerfiles are a documented way to run her, so their base images age in public.
+  - package-ecosystem: docker
+    directories: ["/"]
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]

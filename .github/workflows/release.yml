@@ -1,0 +1,115 @@
+# Tag a version, and this is what turns it into something a stranger can install. It refuses to
+# publish a wheel with no web UI inside, because that wheel installs and then serves a blank page.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build the distributions
+    runs-on: ubuntu-latest
+    # A release job holds a runner until it finishes or the six-hour default kills it, and this one runs
+    # the whole suite before anything is published.
+    timeout-minutes: 45
+    # This job runs the suite, and the image ships Chrome while forbidding unprivileged user
+    # namespaces: the headless render finds no usable sandbox and produces nothing, which fails an
+    # assertion rather than skipping. The variable is the product's own answer for such a host.
+    env:
+      KOTOBA_CHROMIUM_NO_SANDBOX: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
+
+      - run: npm ci
+      - run: pip install --upgrade pip build
+      - run: python scripts/build_web.py
+
+      # A tag that disagrees with the package version publishes a version nobody can cite.
+      - name: the tag and the package must agree
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python - "$GITHUB_REF_NAME" <<'EOF'
+          import sys
+          sys.path.insert(0, "api/src")
+          from packaging.version import Version
+          import kotoba
+          tag = sys.argv[1].lstrip("v")
+          if Version(tag) != Version(kotoba.__version__):
+              raise SystemExit(f"tag {sys.argv[1]} is not version {kotoba.__version__}")
+          print(f"tag {sys.argv[1]} == {kotoba.__version__}")
+          EOF
+
+      - run: pip install -e "./api[dev]"
+      # A release is the one moment a green suite is not optional: the version number it spends
+      # cannot be spent again, and nothing else links this workflow to the one that runs on a push.
+      - run: pytest api/tests -q
+      - name: the wheel must carry the web UI
+        run: KOTOBA_REQUIRE_WEB=1 pytest api/tests/test_the_wheel_carries_the_web_ui.py -q
+
+      - run: python -m build --outdir dist ./api
+      - run: ls -la dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/*
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: pypi
+    # Trusted Publishing: PyPI trusts this workflow by name, so there is no token to leak or rotate.
+    # It has to be configured once on the PyPI project before the first release will go through.
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: dist
+          path: dist
+      # Pinned by commit, like everything else in a job that holds a write permission: a moving tag is
+      # somebody else's decision about what runs with it. The jobs that only read stay on major tags.
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+
+  attach:
+    name: attach the distributions to the release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: dist
+          path: dist
+      # The GitHub CLI rather than a third-party action: this job can write to the repository, and
+      # that is not a permission to hand to code nobody here reviews.
+      - name: upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --repo "$GITHUB_REPOSITORY" \
+            || gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"

@@ -1,0 +1,43 @@
+# Kotoba frontend (Next.js) for the `docker compose up` self-host path. Production hosting normally
+# uses Vercel; this image is the one-command alternative. Build context is the repo root.
+FROM node:22-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+FROM node:22-slim AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Everything below is a BUILD input, not a run-time one: `next build` freezes the /api/* rewrite into
+# .next/routes-manifest.json and inlines every NEXT_PUBLIC_* into the bundles, so setting these on the
+# running container has no effect. Defaults match the docker-compose topology.
+#   KOTOBA_BACKEND_URL        in-network address of the backend, used by the /api/* rewrite.
+#   NEXT_PUBLIC_API_URL       empty → same-origin proxy mode (the browser only talks to this app).
+#   NEXT_PUBLIC_VOICE_WS_URL  dialled by the BROWSER (WebSockets don't survive Next rewrites), so it
+#                             must be reachable from the host — never a compose service name.
+ARG KOTOBA_BACKEND_URL=http://backend:8000
+ARG NEXT_PUBLIC_API_URL=
+ARG NEXT_PUBLIC_VOICE_WS_URL=ws://localhost:8000
+ARG NEXT_PUBLIC_ELEVENLABS_AGENT_ID=
+ENV DOCKER_BUILD=1 \
+    KOTOBA_BACKEND_URL=${KOTOBA_BACKEND_URL} \
+    NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_PUBLIC_VOICE_WS_URL=${NEXT_PUBLIC_VOICE_WS_URL} \
+    NEXT_PUBLIC_ELEVENLABS_AGENT_ID=${NEXT_PUBLIC_ELEVENLABS_AGENT_ID}
+RUN npm run build
+
+FROM node:22-slim AS run
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+# Docker sets HOSTNAME to the container id; Next's standalone server would try to bind to that.
+ENV HOSTNAME=0.0.0.0
+# Standalone output bundles only what the server needs (DOCKER_BUILD=1 above enables it).
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]

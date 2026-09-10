@@ -1,0 +1,33 @@
+# ONE list for BOTH images: a per-Dockerfile ignore file is BuildKit-only and the classic builder
+# skips it in silence. So this excludes only generated, huge or secret paths — never source — and each
+# Dockerfile copies what its own image needs.
+
+# Generated / huge
+node_modules
+.next
+.turbo
+.vercel
+**/__pycache__
+# The backend image needs the package, not the suite that proves it, and not the
+# build metadata that carries the author's name.
+api/tests/
+api/src/*.egg-info/
+api/.pytest_cache/
+**/*.pyc
+.venv
+api/.venv
+tsconfig.tsbuildinfo
+
+# Local databases (`*.db` alone would NOT match api/kotoba.db — a pattern never crosses `/`).
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Secrets — never bake into an image; compose attaches env at run time.
+**/.env
+**/.env.*
+
+# VCS (NOTE: do NOT exclude *.md — the backend reads soul/default.md on startup).
+.git
+.gitignore
+.next-export

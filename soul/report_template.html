@@ -1,0 +1,118 @@
+<!doctype html>
+<!--
+  The model fills the double-brace placeholders and supplies CONTENT ONLY, never design. They are
+  listed here without their braces, or this comment is filled in too — it was, and every report
+  carried a second copy of itself inside it.
+    TITLE        report title (e.g. "Your new portfolio site")
+    DATE         date string
+    SUMMARY      one short paragraph: what this report covers
+    STEPS        list items: what Kotoba did, in order
+    RESULTS      list items: outcomes / findings
+    SOURCES      list items: real citations as anchors (whole section dropped when there are none)
+    FILES        list items: files produced (name + note)
+    NEXT         list items: suggested next steps
+  Empty sections show a dash; the sources one is removed with its SOURCES:START/END markers instead, so a
+  report with nothing to cite never shows an empty Sources heading. Print-to-PDF friendly (@page + colors).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{TITLE}}</title>
+<style>
+  :root{
+    --cream:#fbf1e3; --cream2:#f4e6d2; --ink:#211a2e; --coral:#ff5a3c;
+    --grape:#6c4ce0; --mint:#14c79a; --sun:#ffb22e;
+    --display:ui-sans-serif,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --body:ui-sans-serif,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{background:var(--cream);color:var(--ink);font-family:var(--body);line-height:1.55;}
+  .page{max-width:780px;margin:0 auto;padding:38px 40px 56px;}
+  /* cover */
+  .cover{position:relative;display:flex;align-items:center;gap:22px;background:var(--cream2);
+    border:4px solid var(--ink);border-radius:26px;box-shadow:8px 8px 0 var(--ink);padding:26px 28px;
+    overflow:hidden;}
+  .cover::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;
+    background:var(--sun);opacity:.35;}
+  /* The border eats into these under the sheet's border-box rule, so the numbers are the frame PLUS
+     it: 125x100 of art, which is the aspect the asset is cut to, and cover then crops nothing. */
+  .chibi{width:131px;height:106px;border-radius:20px;border:3px solid var(--ink);object-fit:cover;
+    background:#fff;flex-shrink:0;box-shadow:4px 4px 0 var(--ink);z-index:1;}
+  .cover h1{font-family:var(--display);font-weight:700;font-size:2.05rem;line-height:1.05;z-index:1;}
+  .cover .meta{display:flex;align-items:center;gap:10px;margin-top:8px;z-index:1;}
+  .by{font-family:var(--display);font-weight:600;color:var(--grape);}
+  .date{font-size:.85rem;background:#fff;border:2px solid var(--ink);border-radius:999px;
+    padding:.12rem .6rem;font-weight:600;}
+  /* sections */
+  section{margin-top:26px;}
+  h2{font-family:var(--display);font-weight:600;font-size:1.15rem;display:flex;align-items:center;gap:10px;
+    margin-bottom:12px;}
+  h2 .dot{width:14px;height:14px;border-radius:5px;border:2.5px solid var(--ink);display:inline-block;}
+  .c-coral{background:var(--coral);} .c-grape{background:var(--grape);}
+  .c-mint{background:var(--mint);} .c-sun{background:var(--sun);}
+  .card{background:#fff;border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);
+    padding:16px 18px;}
+  .summary{font-size:1.02rem;}
+  ul{list-style:none;display:flex;flex-direction:column;gap:9px;}
+  li{position:relative;padding-left:24px;}
+  li::before{content:"";position:absolute;left:4px;top:8px;width:9px;height:9px;border-radius:50%;
+    background:var(--coral);border:2px solid var(--ink);}
+  .steps li::before{background:var(--grape);} .results li::before{background:var(--mint);}
+  .files li::before{background:var(--sun);border-radius:3px;} .next li::before{background:var(--coral);}
+  .sources li::before{background:var(--grape);border-radius:3px;}
+  .sources a{color:var(--grape);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+  .sources .u{display:block;font-size:.76rem;opacity:.65;word-break:break-all;}
+  .sources .n{display:block;font-size:.88rem;opacity:.85;}
+  footer{margin-top:34px;text-align:center;font-size:.8rem;color:var(--ink);opacity:.6;
+    font-family:var(--display);font-weight:500;}
+  @page{margin:14mm;}
+  @media print{body{background:#fff;} .page{padding:0;}}
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="cover">
+      <img class="chibi" src="{{CHIBI}}" alt="Kotoba" />
+      <div>
+        <h1>{{TITLE}}</h1>
+        <div class="meta"><span class="by">by Kotoba</span><span class="date">{{DATE}}</span></div>
+      </div>
+    </div>
+
+    <section>
+      <h2><span class="dot c-coral"></span>Summary</h2>
+      <div class="card summary">{{SUMMARY}}</div>
+    </section>
+
+    <section class="steps">
+      <h2><span class="dot c-grape"></span>What I did</h2>
+      <div class="card"><ul>{{STEPS}}</ul></div>
+    </section>
+
+    <section class="results">
+      <h2><span class="dot c-mint"></span>Results</h2>
+      <div class="card"><ul>{{RESULTS}}</ul></div>
+    </section>
+
+    <!--SOURCES:START-->
+    <section class="sources">
+      <h2><span class="dot c-grape"></span>Sources</h2>
+      <div class="card"><ul>{{SOURCES}}</ul></div>
+    </section>
+    <!--SOURCES:END-->
+
+    <section class="files">
+      <h2><span class="dot c-sun"></span>Files</h2>
+      <div class="card"><ul>{{FILES}}</ul></div>
+    </section>
+
+    <section class="next">
+      <h2><span class="dot c-coral"></span>Next steps</h2>
+      <div class="card"><ul>{{NEXT}}</ul></div>
+    </section>
+
+    <footer>Made with care by Kotoba · 言</footer>
+  </div>
+</body>
+</html>

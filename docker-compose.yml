@@ -1,0 +1,55 @@
+# Kotoba self-hosting — backend (FastAPI) + frontend (Next.js).
+# Quick start:  cp api/.env.example api/.env  &&  docker compose up --build
+# Ports are overridable so the stack can run next to a local dev server. KOTOBA_BACKEND_PORT is baked
+# into the frontend image (see args below), so always pass --build when you change it:
+#   KOTOBA_WEB_PORT=3100 KOTOBA_BACKEND_PORT=8100 docker compose up --build
+name: kotoba
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - api/.env
+    environment:
+      # Absolute path: the DB must land on the volume, not in the container layer.
+      DATABASE_URL: sqlite:////app/data/kotoba.db
+      SOUL_PATH: /app/soul/default.md
+      # The voice socket is exempt from CORS, so the backend keeps its own allowlist and it only
+      # knows port 3000. Move the web port without this and the call connects to silence.
+      CORS_ORIGINS: "http://localhost:${KOTOBA_WEB_PORT:-3000},http://127.0.0.1:${KOTOBA_WEB_PORT:-3000}"
+    ports:
+      # Loopback unless you say otherwise: a default install has no password, and this API runs
+      # commands. Publish it wider only behind something that asks who is calling.
+      - "${KOTOBA_BIND:-127.0.0.1}:${KOTOBA_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - kotoba-db:/app/data
+      - kotoba-home:/home/kotoba/.kotoba
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        # next build bakes these in — see Dockerfile.web. The browser cannot resolve "backend", so
+        # the voice WebSocket points at the published host port instead of the compose network.
+        KOTOBA_BACKEND_URL: http://backend:8000
+        NEXT_PUBLIC_VOICE_WS_URL: ws://localhost:${KOTOBA_BACKEND_PORT:-8000}
+        NEXT_PUBLIC_ELEVENLABS_AGENT_ID: ${NEXT_PUBLIC_ELEVENLABS_AGENT_ID:-}
+    env_file:
+      # Only the login gate is read here, at run time. KOTOBA_BACKEND_URL / NEXT_PUBLIC_* in this file
+      # are INERT in the container — they are build inputs (args above). Set KOTOBA_WEB_PASSWORD to the
+      # SAME value as in api/.env, or leave it unset in both for an open local stack.
+      - path: .env.local
+        required: false
+    ports:
+      - "${KOTOBA_BIND:-127.0.0.1}:${KOTOBA_WEB_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  kotoba-db:
+  kotoba-home:

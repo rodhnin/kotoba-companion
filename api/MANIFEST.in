@@ -1,0 +1,7 @@
+recursive-include src/kotoba/data *
+recursive-include src/kotoba/web *
+include kotoba_build.py
+include _web_check.py
+prune tests
+include LICENSE
+include THIRD_PARTY_NOTICES.md

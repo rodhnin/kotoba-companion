@@ -1,0 +1,46 @@
+# This project runs shell commands and Python on the machine of whoever installs it. A scanner that
+# reads the paths from an argument to a subprocess is the one kind of review a solo maintainer cannot
+# do by eye on every change.
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Findings arrive as the rules improve, not only as the code changes.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyse:
+    name: analyse ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    # Code scanning is free on a public repository and a paid licence on a private one, so while this
+    # sits unpublished the upload has nowhere to go and the job fails for a reason that is not a
+    # finding. A missing field means the event carried no repository, so it runs rather than skips.
+    if: github.event.repository.private != true
+    permissions:
+      # Naming any permission sets every unnamed one to none, and the checkout needs this the
+      # moment the repository is private — which is how it sits until the day it is published.
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63  # v4.38.0
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63  # v4.38.0
+        with:
+          category: /language:${{ matrix.language }}

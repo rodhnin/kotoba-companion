@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work the way it says it does
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not put API keys, tokens or personal file contents in here — an issue is public.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+      placeholder: I asked her to … and she …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Which version
+      description: The output of `kotoba --version`. `doctor` does not name it from a clone.
+      placeholder: "0.10.0"
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: What `kotoba doctor` says
+      description: >
+        Paste the whole output. It names your platform, your Python, which extras are installed and
+        which piece is missing — most reports are answered by it. Redact nothing but secrets.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options: [the web app, the terminal, Discord, the voice call, installing, something else]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Anything the log said
+      description: From `~/.kotoba/cli.log`, or the terminal the backend was running in.
+      render: text
