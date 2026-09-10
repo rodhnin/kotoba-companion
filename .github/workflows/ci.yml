@@ -42,6 +42,10 @@ jobs:
     # not a skip. The variable is the product's own answer for a host of that shape.
     env:
       KOTOBA_CHROMIUM_NO_SANDBOX: "1"
+      # Three suites share one two-core machine here, and the render missed its budget on one
+      # interpreter of three while the others passed. The 45s default is what a person waiting
+      # for a report will bear; this box is not that person.
+      KOTOBA_PDF_TIMEOUT: "180"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

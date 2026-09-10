@@ -64,3 +64,21 @@ def test_the_render_leaves_nothing_of_its_own_behind():
     source = Path(pdf.__file__).read_text(encoding="utf-8")
     assert "TemporaryDirectory" in source, "the html and the pdf would outlive the render"
     assert "--user-data-dir=" not in source, "a fresh profile makes Brave hang instead of printing"
+
+
+@pytest.mark.parametrize("given,expected", [
+    (None, 45.0),        # what a person waiting for a report will bear
+    ("180", 180.0),      # a loaded build machine, which is not that person
+    ("nonsense", 45.0),  # a typo must not remove the bound
+    ("0", 1.0),          # nor may it become "give up at once"
+    ("-5", 1.0),
+])
+def test_the_render_budget_can_be_answered_by_the_host(monkeypatch, given, expected):
+    """The default is a product decision; the override exists because three suites on one two-core
+    machine missed it on a single interpreter while the other two passed the same test."""
+    from kotoba.core import pdf
+
+    monkeypatch.delenv("KOTOBA_PDF_TIMEOUT", raising=False)
+    if given is not None:
+        monkeypatch.setenv("KOTOBA_PDF_TIMEOUT", given)
+    assert pdf._render_timeout() == expected

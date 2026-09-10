@@ -82,6 +82,16 @@ def _sandbox_flags() -> tuple[str, ...]:
     return ("--no-sandbox",) if no_sandbox_needed() else ()
 
 
+def _render_timeout() -> float:
+    """Forty-five seconds is what a person waiting for their report will bear, not a measurement of how
+    long the work takes. A shared build machine running three suites at once is not that person: it
+    missed the budget on one interpreter of three while the other two passed the same test."""
+    try:
+        return max(float(os.getenv("KOTOBA_PDF_TIMEOUT", "") or 45), 1.0)
+    except ValueError:
+        return 45.0
+
+
 async def html_to_pdf(html: str) -> bytes | None:
     """Render `html` to PDF bytes. Returns None if no chromium is available or rendering fails.
 
@@ -105,11 +115,11 @@ async def html_to_pdf(html: str) -> bytes | None:
             stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _, err = await asyncio.wait_for(proc.communicate(), timeout=45)
+            _, err = await asyncio.wait_for(proc.communicate(), timeout=_render_timeout())
         except asyncio.TimeoutError:
             proc.kill()
             await proc.wait()
-            log.warning("PDF render timed out after 45s")
+            log.warning("PDF render timed out after %ss", _render_timeout())
             return None
         except asyncio.CancelledError:
             # Cancelling a coroutine never kills the process it spawned; only the timeout branch used to
