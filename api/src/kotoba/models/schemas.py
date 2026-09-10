@@ -1,9 +1,14 @@
 """Pydantic request/response models for the Kotoba backend."""
 from __future__ import annotations
 
+import re
+
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+_WELL_FORMED = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 
 
 class ChatRequest(BaseModel):
@@ -21,13 +26,17 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
 
     def resolve_session_id(self) -> Optional[str]:
-        """Find the frontend session id wherever ElevenLabs put it."""
-        if self.session_id:
+        """Find the frontend session id wherever ElevenLabs put it.
+
+        A shape we did not mint is not honoured: it is echoed into the log, and a newline inside one
+        forges a line there. Refusing the whole request would drop a live call for a field that only
+        routes events, so an unusable id reads as absent and the caller is given a fresh one."""
+        if self.session_id and _WELL_FORMED.match(self.session_id):
             return self.session_id
         extra = self.model_extra or {}
         for key in ("session_id", "sessionId"):
             v = extra.get(key)
-            if v:
+            if v and _WELL_FORMED.match(str(v)):
                 return str(v)
         # ElevenLabs nests the custom-LLM extra body under `elevenlabs_extra_body` — read off real
         # voice-call bodies, not their docs. The other three are SDK-version fallbacks.
@@ -40,7 +49,7 @@ class ChatRequest(BaseModel):
             c = extra.get(container)
             if isinstance(c, dict):
                 v = c.get("session_id") or c.get("sessionId")
-                if v:
+                if v and _WELL_FORMED.match(str(v)):
                     return str(v)
         return None
 

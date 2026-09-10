@@ -21,7 +21,9 @@ from dotenv import load_dotenv
 # BEFORE the core.* imports (hence the noqa E402s): several read os.getenv at MODULE level.
 load_dotenv()
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket  # noqa: E402
+from typing import Annotated  # noqa: E402
+
+from fastapi import Depends, FastAPI, Header, HTTPException, Path, Request, WebSocket  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
 
@@ -81,6 +83,13 @@ async def lifespan(app: FastAPI):
     app.state.mcp = engine.mcp
     yield
     await core_engine.stop(engine)
+
+
+# Three things mint a session id and nothing else ever should: the browser's `crypto.randomUUID()`,
+# `uuid4().hex` here and in the terminal, and `discord:` plus a digest. It is echoed back to us and then
+# written into the log, so a newline inside one forges a line in the operator's own record of what she
+# did. Refused at the door rather than scrubbed at each of the twenty-five places that write it.
+SessionId = Annotated[str, Path(pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")]
 
 
 app = FastAPI(title="Kotoba", version=__version__, lifespan=lifespan)
@@ -665,7 +674,7 @@ async def chat_completions(request: ChatRequest, http: Request):
 
 
 @app.get("/api/events/{session_id}")
-async def events(session_id: str):
+async def events(session_id: SessionId):
     queue = register(session_id)
     from kotoba.core import session_sandbox
 
@@ -724,7 +733,7 @@ def _ws_origin_allowed(origin: str | None, host: str | None = None) -> bool:
 
 
 @app.websocket("/api/voice/{session_id}")
-async def voice_ws(websocket: WebSocket, session_id: str):
+async def voice_ws(websocket: WebSocket, session_id: SessionId):
     """Local voice mode: full-duplex browser ⇄ backend WS (mic PCM in, transcripts + TTS audio out) —
     the backend talks OUTBOUND to ElevenLabs, so no tunnel/public URL is needed. The message contract
     and the orchestration live in the voice session, not here; the EL-agent path is untouched."""
@@ -749,14 +758,14 @@ async def voice_ws(websocket: WebSocket, session_id: str):
 
 
 @app.post("/api/session/{session_id}/mute")
-async def set_session_mute(session_id: str, body: dict) -> dict:
+async def set_session_mute(session_id: SessionId, body: dict) -> dict:
     """Frontend reports mic mute state so Kotoba stays silent while muted (no proactive check-ins)."""
     set_muted(session_id, bool(body.get("muted")))
     return {"session_id": session_id, "muted": is_muted(session_id)}
 
 
 @app.post("/api/session/{session_id}/leave")
-async def leave_session(session_id: str) -> dict:
+async def leave_session(session_id: SessionId) -> dict:
     """The user explicitly HUNG UP — abort everything for this session. Distinct from the call merely
     DROPPING, which keeps work alive on purpose to announce on reconnect.
 
@@ -790,7 +799,7 @@ async def leave_session(session_id: str) -> dict:
 
 
 @app.get("/api/session/{session_id}/tasks")
-async def session_tasks(session_id: str) -> dict:
+async def session_tasks(session_id: SessionId) -> dict:
     """Current task list for this session — lets a UI renderer that connects mid-turn rehydrate without
     waiting for the next mutation event. Returns {"list": null} when no list exists."""
     from kotoba.core import task_list
@@ -799,7 +808,7 @@ async def session_tasks(session_id: str) -> dict:
 
 
 @app.get("/api/session/{session_id}/work")
-async def session_work(session_id: str) -> dict:
+async def session_work(session_id: SessionId) -> dict:
     """Background-work status for the frontend — drives announce-on-reconnect. A work that outlives the
     ElevenLabs call (it dies at transport.EL_MAX_DURATION_SECONDS) lands its work_done frame on a dead
     session. On RECONNECT the frontend polls this; if `pending`, it announces once and the flag flips."""
@@ -815,7 +824,7 @@ async def session_work(session_id: str) -> dict:
 
 
 @app.post("/api/session/{session_id}/text-turn")
-async def flag_text_turn(session_id: str) -> dict:
+async def flag_text_turn(session_id: SessionId) -> dict:
     """Frontend calls this right before sending a TYPED message so the imminent turn is answered even if
     the session is muted (mute silences the mic/silence-turns, not an explicit typed message)."""
     mark_text_turn(session_id)
@@ -823,7 +832,7 @@ async def flag_text_turn(session_id: str) -> dict:
 
 
 @app.post("/api/session/{session_id}/attachment")
-async def add_attachment(session_id: str, body: dict) -> dict:
+async def add_attachment(session_id: SessionId, body: dict) -> dict:
     """Receive an image or PDF the user attached as a base64 data URL and stash it for the NEXT turn.
     ElevenLabs' uploadFile cannot reach a custom LLM, so attachments ride our own context instead.
 
@@ -859,7 +868,7 @@ async def add_attachment(session_id: str, body: dict) -> dict:
 
 
 @app.get("/api/session/{session_id}/report")
-async def get_session_report(session_id: str):
+async def get_session_report(session_id: SessionId):
     """Serve the latest report HTML for the ReportPanel viewer (rendered in a sandboxed iframe).
 
     The sandbox CSP + nosniff come from DocumentSecurityMiddleware, like every other document here. The
@@ -876,7 +885,7 @@ async def get_session_report(session_id: str):
 
 
 @app.get("/api/session/{session_id}/report.pdf")
-async def get_session_report_pdf(session_id: str):
+async def get_session_report_pdf(session_id: SessionId):
     """Render the report to a real PDF server-side (colors guaranteed, no print-dialog checkbox)."""
     from fastapi.responses import Response
 
@@ -1009,7 +1018,7 @@ async def open_model_file(path: str, request: Request):
 
 
 @app.post("/api/session/{session_id}/input")
-async def submit_session_input(session_id: str, body: dict, http: Request) -> dict:
+async def submit_session_input(session_id: SessionId, body: dict, http: Request) -> dict:
     """User's answer to a need_input card (typed text / key / approval). Resolves the waiting Task.
     A 'key' is persisted backend-only and NEVER echoed back. The name is namespaced server-side with
     the same cred: prefix as request_credential — the client can never address system keys (llm:*/mcp:*).

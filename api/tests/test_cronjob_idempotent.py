@@ -21,7 +21,7 @@ def test_identical_reminder_not_duplicated():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ctx = _Ctx(db)
         r1 = await cronjob.execute({"action": "create", "message": "respira profundo", "in_minutes": 1}, ctx)
@@ -39,7 +39,7 @@ def test_distinct_reminders_still_create():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ctx = _Ctx(db)
         await cronjob.execute({"action": "create", "message": "tomar agua", "in_minutes": 1}, ctx)
@@ -57,7 +57,7 @@ def test_explicit_one_time_overrides_model_recurring():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ctx = _Ctx(db)
         ctx.user_text = "Recuérdame en 1 minuto que tome té, una sola vez por favor."
@@ -73,7 +73,7 @@ def test_genuine_recurring_is_kept():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ctx = _Ctx(db)
         ctx.user_text = "recuérdame tomar agua todos los días"
@@ -88,7 +88,7 @@ def test_same_message_far_apart_creates_two():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ctx = _Ctx(db)
         await cronjob.execute({"action": "create", "message": "estirar", "in_minutes": 1}, ctx)

@@ -268,7 +268,7 @@ def test_the_jobs_emotion_mid_turn_does_not_move_her_face():
 
 @pytest.fixture()
 def own_db(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + tempfile.mktemp(suffix=".db"))
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
 
 
 def test_each_turn_mints_its_own_run_id_and_the_loop_receives_it(monkeypatch, own_db):

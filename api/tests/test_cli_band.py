@@ -692,7 +692,7 @@ def test_the_wizards_checkmark_folds_for_the_terminal_that_asked_for_ascii(monke
     monkeypatch.setattr(wizard.voice_key, "verify", accept_voice)
 
     async def go():
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         ok = await wizard.run(db, a_caps(unicode=False, g=dict(GLYPHS_ASCII)),
                               ask=lambda _p: "1", ask_secret=lambda _p: "sk-good")

@@ -24,7 +24,7 @@ def _run(coro):
 
 @pytest.fixture(autouse=True)
 def _own_state(tmp_path, monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + tempfile.mktemp(suffix=".db"))
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
 
 
 def test_starting_without_tickers_starts_no_cron():

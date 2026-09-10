@@ -15,7 +15,7 @@ def _run(coro):
 async def _db():
     from kotoba.db.database import Database
 
-    db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+    db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
     await db.connect()
     # update_soul_config UPDATEs the singleton row — seed it so the fresh test DB has one.
     await db.conn.execute("INSERT OR IGNORE INTO soul_config (id) VALUES ('default')")

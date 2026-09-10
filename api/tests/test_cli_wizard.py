@@ -22,7 +22,7 @@ def _run(coro):
 
 
 def _db() -> Database:
-    return Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+    return Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
 
 
 def test_a_fresh_install_needs_the_wizard():

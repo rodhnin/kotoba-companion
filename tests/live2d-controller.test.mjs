@@ -9,16 +9,18 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const copy = join(tmpdir(), `kotoba-live2d-controller-${process.pid}.mts`);
+// A name built from the pid is a name anybody sharing this machine can predict and get in front of.
+const scratch = mkdtempSync(join(tmpdir(), "kotoba-live2d-"));
+const copy = join(scratch, "controller.mts");
 writeFileSync(copy, readFileSync("lib/live2d-controller.ts", "utf8").replace(
   /@\/lib\/(\w[\w-]*)/g, (_, mod) => pathToFileURL(resolve("lib", `${mod}.ts`)).href));
 const { Live2DController } = await import(pathToFileURL(copy).href);
-process.on("exit", () => rmSync(copy, { force: true }));
+process.on("exit", () => rmSync(scratch, { force: true, recursive: true }));
 
 /** A model that records what is done to it, and in which order. It emits `afterMotionUpdate` from
  *  inside its own update, exactly where the engine does — between the motions and the physics. */

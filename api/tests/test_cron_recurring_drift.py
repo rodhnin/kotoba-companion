@@ -42,7 +42,7 @@ def test_purge_removes_old_finished_keeps_recent_and_recurring():
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         old = (datetime.now(timezone.utc) - timedelta(days=40)).strftime("%Y-%m-%d %H:%M:%S")
         recent = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S")

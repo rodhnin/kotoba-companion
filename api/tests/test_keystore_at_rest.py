@@ -54,7 +54,7 @@ def test_save_key_never_stores_a_secret_in_plaintext(kek):
     async def go():
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         for secret in ("v1:sk-looks-like-a-blob", "sk-plain", "xai-abc"):
             await db.save_key("llm:openai:api_key", secret)
@@ -128,7 +128,7 @@ def test_an_unreadable_key_is_not_reported_as_saved(kek):
         from kotoba.core.settings import _llm_settings
         from kotoba.db.database import Database
 
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         await db.save_key("llm:openai:api_key", "sk-real")
         names = [k["name"] for k in await db.list_key_names()]

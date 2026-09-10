@@ -32,7 +32,7 @@ def _fmt(dt):
 
 
 async def _db():
-    db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+    db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
     await db.connect()
     return db
 

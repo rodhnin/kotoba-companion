@@ -121,7 +121,7 @@ def run_wizard(monkeypatch, tmp_path, answers, verify=None, caps=None, width=96)
     buf = io.StringIO()
 
     async def go():
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         _LEFT_OPEN.append(db)
         await sync_from_file(db, "./soul/default.md")
@@ -153,7 +153,7 @@ def run_bare_wizard(monkeypatch, tmp_path, answers, capsys, ascii_only=False):
     _drain()
 
     async def go():
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         _LEFT_OPEN.append(db)
         await sync_from_file(db, "./soul/default.md")
@@ -512,7 +512,7 @@ def test_the_install_with_no_renderer_still_gets_the_whole_thing(monkeypatch, tm
     answers = Answers(typed=["1", "", "Jordan", "Yuki", "es"], keys=["sk-good"])
 
     async def go():
-        db = Database("sqlite:///" + tempfile.mktemp(suffix=".db"))
+        db = Database("sqlite:///" + (tempfile.mkdtemp() + "/kotoba.db"))
         await db.connect()
         await sync_from_file(db, "./soul/default.md")
         ok = await wizard.run(db, ask=answers.ask, ask_secret=answers.secret)
