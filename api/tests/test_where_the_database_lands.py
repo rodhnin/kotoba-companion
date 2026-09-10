@@ -42,11 +42,16 @@ def test_every_spelling_of_the_default_lands_on_the_same_file(url):
     ("sqlite+aiosqlite:////abs/a.db", "/abs/a.db"),
 ])
 def test_the_fourth_slash_still_means_absolute(url, expected):
-    """Absolute means "not re-rooted into the package", and on Windows that is spelt with a drive
-    letter — comparing the POSIX string there failed a URL the code had read exactly right."""
-    # Compared against the RESOLVED path, not a suffix: the failure this guards is a re-rooting into
-    # the package, and `<repo>/api/abs/a.db` both is absolute and ends with `/abs/a.db`.
-    assert Path(_path_from_url(url)) == Path(expected).resolve()
+    """Absolute means "not re-rooted into the package", which is the property, not a spelling.
+
+    A leading slash with no drive is not absolute on Windows, it is relative to whichever drive you are
+    standing on, so the same URL resolves to two different roots depending on where the process started
+    — and asserting one exact string picked the wrong one on a runner whose workspace is not on C:."""
+    got = Path(_path_from_url(url))
+    tail = Path(expected)
+    assert got.is_absolute()
+    assert got.parts[-len(tail.parts) + 1:] == tail.parts[1:]
+    assert db_dir() not in got.parents
 
 
 @pytest.mark.parametrize("url", ["sqlite:///:memory:", "sqlite+aiosqlite:///:memory:", "sqlite://"])
@@ -65,7 +70,10 @@ def test_a_bare_path_is_still_accepted_and_still_relative_to_her_home():
     launching from another directory silently opens a different, empty one. `here()` is that place,
     which is `api/` only while a database already sits there."""
     assert _path_from_url("./kotoba.db") == here()
-    assert Path(_path_from_url("/tmp/somewhere.db")) == Path("/tmp/somewhere.db").resolve()
+    given = Path(_path_from_url("/tmp/somewhere.db"))
+    assert given.is_absolute()
+    assert given.parts[-2:] == ("tmp", "somewhere.db")
+    assert db_dir() not in given.parents
 
 
 # --- and WHICH directory that is ------------------------------------------------------------------
